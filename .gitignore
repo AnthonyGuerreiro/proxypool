@@ -1,0 +1,30 @@
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+
+# IDEA
+.idea
+.shelf
+*.iml
+*.ipr
+*.iws
+/out
+
+# Eclipse
+*.classpath
+*.project
+*.settings
+/bin
+
+# /build
+/build
+
+# gradle
+/.gradle
+
+# Mac
+*.DS_Store
