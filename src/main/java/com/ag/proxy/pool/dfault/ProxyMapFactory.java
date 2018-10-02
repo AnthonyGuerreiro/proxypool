@@ -1,9 +1,9 @@
 package com.ag.proxy.pool.dfault;
 
+import com.ag.proxy.Proxy;
 import com.ag.proxy.ProxyFactory;
 import com.ag.proxy.info.ProxyInfo;
 
-import java.net.Proxy;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

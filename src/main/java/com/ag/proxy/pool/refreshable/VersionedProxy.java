@@ -1,18 +1,27 @@
 package com.ag.proxy.pool.refreshable;
 
+import com.ag.proxy.Proxy;
 import lombok.Getter;
 
-import java.net.Proxy;
-
-@Getter
-class VersionedProxy extends Proxy {
+class VersionedProxy implements Proxy {
 
     private final Proxy proxy;
+
+    @Getter
     private final int version;
 
     public VersionedProxy(final Proxy proxy, final int version) {
-        super(proxy.type(), proxy.address());
         this.proxy = proxy;
         this.version = version;
+    }
+
+    @Override
+    public String getHost() {
+        return this.proxy.getHost();
+    }
+
+    @Override
+    public int getPort() {
+        return this.proxy.getPort();
     }
 }

@@ -1,11 +1,11 @@
 package com.ag.proxy.pool.dfault;
 
+import com.ag.proxy.Proxy;
 import com.ag.proxy.ProxyFactory;
 import com.ag.proxy.info.ProxyInfo;
 import com.ag.proxy.pool.ProxyPool;
 import com.ag.proxy.strategy.ItemSelectionStrategy;
 
-import java.net.Proxy;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;

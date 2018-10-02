@@ -1,9 +1,9 @@
 package com.ag.proxy.pool.refreshable;
 
+import com.ag.proxy.Proxy;
 import com.ag.proxy.pool.ProxyPool;
 import net.jcip.annotations.GuardedBy;
 
-import java.net.Proxy;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
