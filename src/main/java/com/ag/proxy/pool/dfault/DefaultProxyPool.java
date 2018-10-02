@@ -1,7 +1,6 @@
 package com.ag.proxy.pool.dfault;
 
 import com.ag.proxy.Proxy;
-import com.ag.proxy.ProxyFactory;
 import com.ag.proxy.info.ProxyInfo;
 import com.ag.proxy.pool.ProxyPool;
 import com.ag.proxy.strategy.ItemSelectionStrategy;
@@ -29,7 +28,7 @@ public class DefaultProxyPool implements ProxyPool {
 
     public DefaultProxyPool(final List<ProxyInfo> infos,
                             final ItemSelectionStrategy<Proxy> strategy,
-                            final ProxyFactory proxyFactory) {
+                            final Function<List<ProxyInfo>, List<Proxy>> proxyFactory) {
         this.strategy = strategy;
 
         this.proxies = new ProxyMapFactory(proxyFactory).create(infos);

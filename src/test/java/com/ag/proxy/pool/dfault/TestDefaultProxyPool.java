@@ -10,7 +10,7 @@ public class TestDefaultProxyPool {
 
     @Test
     public void testInstantiation() {
-        final DefaultProxyPoolFactory factory = new DefaultProxyPoolFactory(null);
+        final DefaultProxyPoolFactory factory = new DefaultProxyPoolFactory(null, null);
         final DefaultProxyPool pool = factory.createDefaultProxyPool();
         assertThat(pool.size(), is(not(0)));
     }

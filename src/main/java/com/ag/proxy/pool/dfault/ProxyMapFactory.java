@@ -1,18 +1,18 @@
 package com.ag.proxy.pool.dfault;
 
 import com.ag.proxy.Proxy;
-import com.ag.proxy.ProxyFactory;
 import com.ag.proxy.info.ProxyInfo;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 class ProxyMapFactory {
 
-    private final ProxyFactory factory;
+    private final Function<List<ProxyInfo>, List<Proxy>> factory;
 
-    ProxyMapFactory(final ProxyFactory factory) {
+    ProxyMapFactory(final Function<List<ProxyInfo>, List<Proxy>> factory) {
         this.factory = factory;
     }
 

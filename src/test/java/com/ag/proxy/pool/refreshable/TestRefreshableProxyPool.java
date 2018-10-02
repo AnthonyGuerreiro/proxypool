@@ -11,7 +11,7 @@ public class TestRefreshableProxyPool {
 
     @Test
     public void testInstantiation() {
-        final DefaultProxyPoolFactory factory = new DefaultProxyPoolFactory(null);
+        final DefaultProxyPoolFactory factory = new DefaultProxyPoolFactory(null, null);
         final RefreshableProxyPool pool = new RefreshableProxyPool(factory::createDefaultProxyPool);
         assertThat(pool.size(), is(not(0)));
     }
