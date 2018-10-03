@@ -4,6 +4,7 @@ import com.ag.proxy.Proxy;
 import com.ag.proxy.pool.ProxyPool;
 import net.jcip.annotations.GuardedBy;
 
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.StampedLock;
@@ -26,6 +27,8 @@ public class RefreshableProxyPool implements ProxyPool {
     @GuardedBy("sl")
     private final ConcurrentMap<VersionedProxy, Proxy> reverseCache;
 
+    private final Set<Thread> waitingThreads = ConcurrentHashMap.newKeySet(10);
+
 
     public RefreshableProxyPool(final Supplier<ProxyPool> supplier) {
         this.supplier = supplier;
@@ -39,6 +42,9 @@ public class RefreshableProxyPool implements ProxyPool {
     public void refresh() {
         final long stamp = this.sl.writeLock();
         try {
+            this.waitingThreads.forEach(Thread::interrupt);
+            this.waitingThreads.clear();
+
             this.version++;
             this.cache.clear();
             this.reverseCache.clear();
@@ -52,7 +58,9 @@ public class RefreshableProxyPool implements ProxyPool {
     public Proxy acquireProxy() throws InterruptedException {
         final long stamp = this.sl.readLock();
         try {
+            this.waitingThreads.add(Thread.currentThread());
             final Proxy proxy = pool.acquireProxy();
+            this.waitingThreads.remove(Thread.currentThread());
             final VersionedProxy vProxy = this.cache.computeIfAbsent(proxy, pr -> new VersionedProxy(pr, this.version));
             this.reverseCache.putIfAbsent(vProxy, proxy);
             return vProxy;
