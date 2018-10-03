@@ -14,7 +14,7 @@ public class ProxySupplier implements Supplier<List<ProxyInfo>> {
 
     private final static String DEFAULT_URL = "/raw-proxy-urls.txt";
 
-    public List<ProxyInfo> defaultProxyInfos() {
+    private List<ProxyInfo> defaultProxyInfos() {
         final ProxyExtractor extractor = new ClasspathUrlProxyExtractor(new RawUrlProxyExtractor(" "));
         return Collections.singletonList(new DefaultProxyInfo(DEFAULT_URL, extractor));
     }

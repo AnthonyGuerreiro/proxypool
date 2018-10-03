@@ -1,3 +1,9 @@
+buildscript {
+    ext {
+        awaitilityVersion = "3.1.2"
+    }
+}
+
 plugins {
     id 'java'
 }
@@ -22,6 +28,8 @@ idea {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    testCompile("org.awaitility:awaitility:${awaitilityVersion}")
+
     compile("org.jsoup:jsoup:1.11.3")
     compile('net.jcip:jcip-annotations:1.0')
     compileOnly("org.projectlombok:lombok:1.16.22")

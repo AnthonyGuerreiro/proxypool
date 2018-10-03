@@ -10,7 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class DefaultProxyPool implements ProxyPool {
@@ -21,39 +20,39 @@ public class DefaultProxyPool implements ProxyPool {
     private final ConcurrentMap<Proxy, State> proxies;
     private final List<Proxy> exposableProxyList;
 
-    private final Consumer<Proxy> freeProxy;
-    private final Function<Proxy, Boolean> reserveProxy;
-
     private final ItemSelectionStrategy<Proxy> strategy;
 
     public DefaultProxyPool(final List<ProxyInfo> infos,
                             final ItemSelectionStrategy<Proxy> strategy,
-                            final Function<List<ProxyInfo>, List<Proxy>> proxyFactory) {
-        this.strategy = strategy;
+                            final Function<ProxyInfo, List<Proxy>> mapper) {
 
-        this.proxies = new ProxyMapFactory(proxyFactory).create(infos);
+        this.strategy = strategy;
+        this.proxies = new ProxyInfoToConcurrentMapConverter(mapper).convert(infos);
+
         this.exposableProxyList = Collections.unmodifiableList(new ArrayList<>(this.proxies.keySet()));
         this.size = this.exposableProxyList.size();
 
-        this.reserveProxy = proxy -> this.proxies.replace(proxy, State.AVAILABLE, State.TAKEN);
-        this.freeProxy = proxy -> this.proxies.put(proxy, State.AVAILABLE);
-        this.semaphore = new Semaphore(this.proxies.size());
+        this.semaphore = new Semaphore(this.exposableProxyList.size());
     }
 
 
     @Override
     public Proxy acquireProxy() throws InterruptedException {
+        final Function<Proxy, Boolean> reserve = proxy -> this.proxies.replace(proxy, State.AVAILABLE, State.TAKEN);
+
         this.semaphore.acquire();
-        return this.strategy.select(this.exposableProxyList, this.reserveProxy);
+        return this.strategy.select(this.exposableProxyList, reserve);
     }
 
     @Override
     public void releaseProxy(final Proxy proxy) {
-        if (proxy == null || this.proxies.get(proxy) != State.TAKEN) {
+        if (proxy == null) {
             return;
         }
-        this.freeProxy.accept(proxy);
-        this.semaphore.release();
+        final boolean replaced = this.proxies.replace(proxy, State.TAKEN, State.AVAILABLE);
+        if (replaced) {
+            this.semaphore.release();
+        }
     }
 
     @Override

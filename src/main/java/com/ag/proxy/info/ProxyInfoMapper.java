@@ -1,6 +1,7 @@
-package com.ag.proxy;
+package com.ag.proxy.info;
 
-import com.ag.proxy.info.ProxyInfo;
+import com.ag.proxy.pool.dfault.DefaultProxy;
+import com.ag.proxy.Proxy;
 
 import java.util.List;
 import java.util.function.Function;

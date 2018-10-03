@@ -12,6 +12,10 @@ import java.util.function.Supplier;
 
 public class RefreshableProxyPool implements ProxyPool {
 
+    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+    private final Lock r = this.lock.readLock();
+    private final Lock w = this.lock.writeLock();
+
     @GuardedBy("lock")
     private final Supplier<ProxyPool> supplier;
 
@@ -24,10 +28,6 @@ public class RefreshableProxyPool implements ProxyPool {
     private final ConcurrentMap<Proxy, VersionedProxy> cache;
     @GuardedBy("lock")
     private final ConcurrentMap<VersionedProxy, Proxy> reverseCache;
-
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock r = this.lock.readLock();
-    private final Lock w = this.lock.writeLock();
 
 
     public RefreshableProxyPool(final Supplier<ProxyPool> supplier) {

@@ -1,5 +1,6 @@
-package com.ag.proxy;
+package com.ag.proxy.pool.dfault;
 
+import com.ag.proxy.Proxy;
 import lombok.Value;
 
 @Value
