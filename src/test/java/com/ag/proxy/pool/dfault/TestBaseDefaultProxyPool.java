@@ -33,9 +33,9 @@ public class TestBaseDefaultProxyPool {
 
     @Test
     public void testEmptyProxyPoolInstantiation() {
-        final DefaultProxyPool pool = this.factory.createDefaultProxyPool(new ProxySupplier().get(),
-                                                                          null,
-                                                                          ignored -> Collections.emptyList());
+        final ProxyPool pool = this.factory.createDefaultProxyPool(new ProxySupplier().get(),
+                                                                   null,
+                                                                   ignored -> Collections.emptyList());
 
         assertThat(pool.size(), is(0L));
     }

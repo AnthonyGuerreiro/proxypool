@@ -1,6 +1,6 @@
 buildscript {
     ext {
-        awaitilityVersion = "3.1.2"
+        threadweaverVersion = "3.0.mapdb"
     }
 }
 
@@ -28,7 +28,7 @@ idea {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
-    testCompile("org.awaitility:awaitility:${awaitilityVersion}")
+    testCompile("org.mapdb:thread-weaver:${threadweaverVersion}")
 
     compile("org.jsoup:jsoup:1.11.3")
     compile('net.jcip:jcip-annotations:1.0')
