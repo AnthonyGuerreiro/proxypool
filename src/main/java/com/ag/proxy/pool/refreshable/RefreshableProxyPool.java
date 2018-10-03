@@ -67,16 +67,16 @@ public class RefreshableProxyPool implements ProxyPool {
     }
 
     @Override
-    public void releaseProxy(final Proxy proxy) {
+    public boolean releaseProxy(final Proxy proxy) {
         if (!(proxy instanceof VersionedProxy)) {
-            return;
+            return false;
         }
         this.r.lock();
         try {
             if (((VersionedProxy) proxy).getVersion() != this.version) {
-                return;
+                return false;
             }
-            this.pool.releaseProxy(this.reverseCache.get(proxy));
+            return this.pool.releaseProxy(this.reverseCache.get(proxy));
         } finally {
             this.r.unlock();
         }

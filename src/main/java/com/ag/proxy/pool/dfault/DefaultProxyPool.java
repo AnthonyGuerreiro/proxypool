@@ -45,14 +45,15 @@ public class DefaultProxyPool implements ProxyPool {
     }
 
     @Override
-    public void releaseProxy(final Proxy proxy) {
+    public boolean releaseProxy(final Proxy proxy) {
         if (proxy == null) {
-            return;
+            return false;
         }
         final boolean replaced = this.proxies.replace(proxy, State.TAKEN, State.AVAILABLE);
         if (replaced) {
             this.semaphore.release();
         }
+        return replaced;
     }
 
     @Override

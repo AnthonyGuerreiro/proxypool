@@ -20,8 +20,8 @@ public class SneakyProxyPool implements ProxyPool {
     }
 
     @Override
-    public void releaseProxy(final Proxy proxy) {
-        this.pool.releaseProxy(proxy);
+    public boolean releaseProxy(final Proxy proxy) {
+        return this.pool.releaseProxy(proxy);
     }
 
     @Override
