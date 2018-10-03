@@ -6,27 +6,24 @@ import net.jcip.annotations.GuardedBy;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.StampedLock;
 import java.util.function.Supplier;
 
 public class RefreshableProxyPool implements ProxyPool {
 
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Lock r = this.lock.readLock();
-    private final Lock w = this.lock.writeLock();
+    private final StampedLock sl = new StampedLock();
 
-    @GuardedBy("lock")
+    @GuardedBy("sl")
     private final Supplier<ProxyPool> supplier;
 
-    @GuardedBy("lock")
+    @GuardedBy("sl")
     private ProxyPool pool;
 
-    @GuardedBy("lock")
+    @GuardedBy("sl")
     private int version = 0;
-    @GuardedBy("lock")
+    @GuardedBy("sl")
     private final ConcurrentMap<Proxy, VersionedProxy> cache;
-    @GuardedBy("lock")
+    @GuardedBy("sl")
     private final ConcurrentMap<VersionedProxy, Proxy> reverseCache;
 
 
@@ -39,30 +36,28 @@ public class RefreshableProxyPool implements ProxyPool {
         this.reverseCache = new ConcurrentHashMap<>(size);
     }
 
-    @SuppressWarnings("unused")
     public void refresh() {
-        this.w.lock();
+        final long stamp = this.sl.writeLock();
         try {
             this.version++;
-            this.reverseCache.clear();
             this.cache.clear();
+            this.reverseCache.clear();
             this.pool = this.supplier.get();
         } finally {
-            this.w.unlock();
+            this.sl.unlockWrite(stamp);
         }
     }
 
     @Override
     public Proxy acquireProxy() throws InterruptedException {
-        this.r.lock();
+        final long stamp = this.sl.readLock();
         try {
-            final Proxy proxy = this.pool.acquireProxy();
-            final VersionedProxy vProxy = this.cache.computeIfAbsent(proxy,
-                                                                     pr -> new VersionedProxy(pr, this.version));
+            final Proxy proxy = pool.acquireProxy();
+            final VersionedProxy vProxy = this.cache.computeIfAbsent(proxy, pr -> new VersionedProxy(pr, this.version));
             this.reverseCache.putIfAbsent(vProxy, proxy);
             return vProxy;
         } finally {
-            this.r.unlock();
+            this.sl.unlockRead(stamp);
         }
     }
 
@@ -71,34 +66,54 @@ public class RefreshableProxyPool implements ProxyPool {
         if (!(proxy instanceof VersionedProxy)) {
             return false;
         }
-        this.r.lock();
-        try {
-            if (((VersionedProxy) proxy).getVersion() != this.version) {
-                return false;
+
+        long stamp = this.sl.tryOptimisticRead();
+        boolean released = releaseProxyInternal(proxy);
+        if (!this.sl.validate(stamp)) {
+            stamp = this.sl.readLock();
+            try {
+                released = releaseProxyInternal(proxy);
+            } finally {
+                this.sl.unlockRead(stamp);
             }
-            return this.pool.releaseProxy(this.reverseCache.get(proxy));
-        } finally {
-            this.r.unlock();
         }
+        return released;
+    }
+
+    private boolean releaseProxyInternal(final Proxy proxy) {
+        if (((VersionedProxy) proxy).getVersion() != this.version) {
+            return false;
+        }
+        return this.pool.releaseProxy(this.reverseCache.get(proxy));
     }
 
     @Override
     public long size() {
-        this.r.lock();
-        try {
-            return this.pool.size();
-        } finally {
-            this.r.unlock();
+        long stamp = this.sl.tryOptimisticRead();
+        long size = this.pool.size();
+        if (!this.sl.validate(stamp)) {
+            stamp = this.sl.readLock();
+            try {
+                size = this.pool.size();
+            } finally {
+                this.sl.unlockRead(stamp);
+            }
         }
+        return size;
     }
 
     @Override
     public long available() {
-        this.r.lock();
-        try {
-            return this.pool.available();
-        } finally {
-            this.r.unlock();
+        long stamp = this.sl.tryOptimisticRead();
+        long available = this.pool.available();
+        if (!this.sl.validate(stamp)) {
+            try {
+                stamp = this.sl.readLock();
+                available = this.pool.available();
+            } finally {
+                this.sl.unlockRead(stamp);
+            }
         }
+        return available;
     }
 }

@@ -9,11 +9,15 @@ import com.ag.proxy.pool.dfault.DefaultProxy;
 import com.ag.proxy.pool.dfault.DefaultProxyPoolFactory;
 import com.ag.proxy.strategy.RoundRobinSelectionStrategy;
 import com.google.testing.threadtester.AnnotatedTestRunner;
+import com.google.testing.threadtester.MethodOption;
 import com.google.testing.threadtester.ThreadedAfter;
 import com.google.testing.threadtester.ThreadedBefore;
 import com.google.testing.threadtester.ThreadedMain;
 import com.google.testing.threadtester.ThreadedSecondary;
 import org.junit.Test;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import static java.util.Collections.singletonList;
 import static org.hamcrest.CoreMatchers.is;
@@ -57,6 +61,8 @@ public class TestConcurrentRefreshableProxyPool {
     @Test
     public void testConcurrent() {
         final AnnotatedTestRunner runner = new AnnotatedTestRunner();
+        final Set<String> methods = new HashSet<>(10);
+        runner.setMethodOption(MethodOption.ALL_METHODS, methods);
         runner.runTests(getClass(), RefreshableProxyPool.class);
     }
 }
