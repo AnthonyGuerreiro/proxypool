@@ -40,6 +40,7 @@ public class RefreshableProxyPool implements ProxyPool {
     }
 
     public void refresh() {
+        final ProxyPool newPool = this.supplier.get();
         final long stamp = this.sl.writeLock();
         try {
             this.waitingThreads.forEach(Thread::interrupt);
@@ -47,8 +48,8 @@ public class RefreshableProxyPool implements ProxyPool {
 
             this.version++;
             this.cache.clear();
+            this.pool = newPool;
             this.reverseCache.clear();
-            this.pool = this.supplier.get();
         } finally {
             this.sl.unlockWrite(stamp);
         }
