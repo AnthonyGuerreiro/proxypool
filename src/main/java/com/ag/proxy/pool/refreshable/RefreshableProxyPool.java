@@ -39,7 +39,7 @@ public class RefreshableProxyPool implements ProxyPool {
         this.reverseCache = new ConcurrentHashMap<>(size);
     }
 
-    public void refresh() {
+    public void refresh() throws InterruptedException {
         final ProxyPool newPool = this.supplier.get();
         final long stamp = this.sl.writeLock();
         try {
@@ -57,18 +57,34 @@ public class RefreshableProxyPool implements ProxyPool {
 
     @Override
     public Proxy acquireProxy() throws InterruptedException {
-        final long stamp = this.sl.readLock();
+        final int version;
+        final ProxyPool pool;
+        long stamp = this.sl.readLock();
         try {
+            version = this.version;
+            pool = this.pool;
             this.waitingThreads.add(Thread.currentThread());
-            final Proxy proxy = pool.acquireProxy();
-            this.waitingThreads.remove(Thread.currentThread());
-            final VersionedProxy vProxy = this.cache.computeIfAbsent(proxy, pr -> new VersionedProxy(pr, this.version));
-            this.reverseCache.putIfAbsent(vProxy, proxy);
-            return vProxy;
+        } finally {
+            this.sl.unlockRead(stamp);
+        }
+
+        final Proxy proxy = pool.acquireProxy();
+
+        stamp = this.sl.readLock();
+        try {
+            if (version == this.version) {
+                this.waitingThreads.remove(Thread.currentThread());
+                final VersionedProxy vProxy = this.cache.computeIfAbsent(proxy, pr -> new VersionedProxy(pr, version));
+                this.reverseCache.putIfAbsent(vProxy, proxy);
+                return vProxy;
+            } else {
+                return new VersionedProxy(proxy, version);
+            }
         } finally {
             this.sl.unlockRead(stamp);
         }
     }
+
 
     @Override
     public boolean releaseProxy(final Proxy proxy) {

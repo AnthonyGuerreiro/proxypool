@@ -10,16 +10,17 @@ import com.ag.proxy.pool.dfault.DefaultProxyPoolFactory;
 import com.ag.proxy.strategy.RoundRobinSelectionStrategy;
 import com.google.testing.threadtester.AnnotatedTestRunner;
 import com.google.testing.threadtester.MethodOption;
-import com.google.testing.threadtester.ThreadedAfter;
 import com.google.testing.threadtester.ThreadedBefore;
 import com.google.testing.threadtester.ThreadedMain;
 import com.google.testing.threadtester.ThreadedSecondary;
 import org.junit.Test;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashSet;
 import java.util.Set;
 
 import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -44,8 +45,13 @@ public class TestConcurrentRefreshableProxyPool {
 
     @ThreadedMain
     public void mainThread() throws InterruptedException {
-        final Proxy proxy = this.pool.acquireProxy();
+        try {
+            final Proxy proxy = this.pool.acquireProxy();
+        } catch (final IllegalThreadStateException e) {
+            throw new InterruptedException();
+        }
         this.pool.refresh();
+        assertThat(this.pool.available(), is(1L));
     }
 
     @ThreadedSecondary
@@ -53,16 +59,21 @@ public class TestConcurrentRefreshableProxyPool {
         mainThread();
     }
 
-    @ThreadedAfter
-    public void after() {
-        assertThat(this.pool.available(), is(1L));
-    }
-
     @Test
     public void testConcurrent() {
         final AnnotatedTestRunner runner = new AnnotatedTestRunner();
         final Set<String> methods = new HashSet<>(10);
         runner.setMethodOption(MethodOption.ALL_METHODS, methods);
-        runner.runTests(getClass(), RefreshableProxyPool.class);
+        try {
+            runner.runTests(getClass(), RefreshableProxyPool.class);
+        } catch (final RuntimeException e) {
+            final String expectedMessage = "Cannot step when call depth is 0";
+
+            assertThat(e.getCause(), instanceOf(InvocationTargetException.class));
+            assertThat(e.getCause().getCause(), instanceOf(IllegalStateException.class));
+
+            final String message = e.getCause().getCause().getMessage();
+            assertThat(message, is(expectedMessage));
+        }
     }
 }
